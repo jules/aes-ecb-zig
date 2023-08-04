@@ -8,7 +8,7 @@ const AesError = error{
     InvalidKeyLength,
 };
 
-export fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Allocator) ![]u8 {
+pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Allocator) ![]u8 {
     if (key.len > state_size) {
         return AesError.InvalidKeyLength;
     }
@@ -20,7 +20,7 @@ export fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.All
     const keys = key_schedule.keyExpansion(padded_key);
 
     var ciphertext = try allocator.alloc(u8, padded_plaintext.len);
-    const repetitions = padded_plaintext / state_size;
+    const repetitions = padded_plaintext.len / state_size;
     for (0..repetitions) |i| {
         var state = State.init(padded_plaintext[i * state_size .. i * state_size + state_size]);
         state.addRoundKey(keys[0..state_size]);
@@ -47,3 +47,9 @@ export fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.All
 //export fn decrypt(ciphertext: []const u8, key: []const u8) ![]u8 {
 //
 //}
+
+const test_allocator = std.testing.allocator;
+
+test "encrypt" {
+    _ = try encrypt("text", "hi", test_allocator);
+}
