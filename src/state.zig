@@ -1,11 +1,15 @@
 const std = @import("std");
 const transformations = @import("transformations.zig");
 
+/// AES state size is always 16 bytes.
 pub const state_size: usize = 16;
 
+/// Represents internal cipher state.
 pub const State = struct {
     mat: [state_size]u8,
 
+    /// Creates a State object from the given input bytes.
+    /// This function expects the caller to have padded the input properly.
     pub fn init(in: []const u8) State {
         var self = State{
             .mat = [state_size]u8{

@@ -51,5 +51,6 @@ pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Alloca
 const test_allocator = std.testing.allocator;
 
 test "encrypt" {
-    _ = try encrypt("text", "hi", test_allocator);
+    const ciphertext = try encrypt("text", "hi", test_allocator);
+    defer test_allocator.free(ciphertext);
 }

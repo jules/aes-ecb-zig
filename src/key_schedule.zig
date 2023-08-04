@@ -18,9 +18,12 @@ pub fn keyExpansion(cipher_key: [16]u8) []u8 {
     // perform key expansions for the remaining 160 bytes
     for (4..44) |i| {
         var temp = schedule[i * 4 - 4 .. i * 4];
-        if (i % 4 == 0) temp = subWord(rotWord(temp)) ^ consts.rcon[(i / 4) / 4];
+        if (i % 4 == 0) {
+            temp = subWord(rotWord(temp));
+            temp[0] ^= consts.rcon[i / 4 - 1];
+        }
         for (0..4) |j| {
-            schedule[i + j] = schedule[i * 4 - 4 + j] ^ temp;
+            schedule[i + j] = schedule[(i - 4) * 4 + j] ^ temp[j];
         }
     }
 
