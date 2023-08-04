@@ -2,6 +2,9 @@ const std = @import("std");
 const consts = @import("consts.zig");
 const transformations = @import("transformations.zig");
 
+/// Performs key expansion on the given cipher key.
+/// Note that the function only accepts a 128-bit cipher key,
+/// and the caller is expected to ensure correct padding before calling this function.
 pub fn keyExpansion(cipher_key: [16]u8) [176]u8 {
     var schedule: [176]u8 = undefined;
 
