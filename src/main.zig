@@ -1,4 +1,5 @@
 const std = @import("std");
+const key_schedule = @import("key_schedule.zig");
 
 export fn encrypt(plaintext: []const u8, key: []const u8) []u8 {
 
