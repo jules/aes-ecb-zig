@@ -13,14 +13,14 @@ pub fn padKey(key: []const u8) [16]u8 {
     return out;
 }
 
-pub fn padPlaintext(plaintext: []const u8, allocator: std.mem.Allocator) ![]const u8 {
-    if (plaintext.len % 16 == 0) {
-        return plaintext;
+pub fn padInput(input: []const u8, allocator: std.mem.Allocator) ![]const u8 {
+    if (input.len % 16 == 0) {
+        return input;
     }
 
-    var padded_plaintext = try allocator.alloc(u8, plaintext.len + plaintext.len % 16);
-    for (plaintext, 0..) |byte, i| {
-        padded_plaintext[i] = byte;
+    var padded_input = try allocator.alloc(u8, input.len + input.len % 16);
+    for (input, 0..) |byte, i| {
+        padded_input[i] = byte;
     }
-    return padded_plaintext;
+    return padded_input;
 }

@@ -44,13 +44,52 @@ pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Alloca
     return ciphertext;
 }
 
-//export fn decrypt(ciphertext: []const u8, key: []const u8) ![]u8 {
-//
-//}
+pub fn decrypt(ciphertext: []const u8, key: []const u8, allocator: std.mem.Allocator) ![]u8 {
+    if (key.len > state_size) {
+        return AesError.InvalidKeyLength;
+    }
 
+    const padded_key = padding.padKey(key);
+    const padded_ciphertext = try padding.padInput(ciphertext, allocator);
+    defer allocator.free(padded_ciphertext);
+
+    const keys = key_schedule.keyExpansion(padded_key);
+
+    var plaintext = try allocator.alloc(u8, padded_ciphertext.len);
+    const repetitions = padded_ciphertext.len / state_size;
+    for (0..repetitions) |i| {
+        var state = State.init(padded_ciphertext[i * state_size .. i * state_size + state_size]);
+
+        state.addRoundKey(keys[keys.len - state_size .. keys.len]);
+
+        for (1..10) |j| {
+            state.invShiftRows();
+            state.invSubBytes();
+            const k = 10 - j;
+            state.addRoundKey(keys[k * state_size .. k * state_size + state_size]);
+            state.invMixColumns();
+        }
+
+        state.invShiftRows();
+        state.invSubBytes();
+        state.addRoundKey(keys[0..state_size]);
+
+        for (i * state_size..i * state_size + state_size, 0..) |j, k| {
+            plaintext[j] = state.mat[k];
+        }
+    }
+
+    return plaintext;
+}
+
+const eql = std.mem.eql;
+const expect = std.testing.expect;
 const test_allocator = std.testing.allocator;
 
-test "encrypt" {
+test "encrypt/decrypt" {
     const ciphertext = try encrypt("text", "hi", test_allocator);
     defer test_allocator.free(ciphertext);
+    const plaintext = try decrypt(ciphertext, "hi", test_allocator);
+    defer test_allocator.free(plaintext);
+    try expect(eql("text", plaintext));
 }
