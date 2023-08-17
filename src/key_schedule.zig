@@ -5,13 +5,13 @@ const transformations = @import("transformations.zig");
 /// Performs key expansion on the given cipher key.
 /// Note that the function only accepts a 128-bit cipher key,
 /// and the caller is expected to ensure correct padding before calling this function.
-pub fn keyExpansion(cipher_key: [16]u8) []u8 {
+pub fn keyExpansion(cipher_key: [16]u8) [176]u8 {
     var schedule: [176]u8 = undefined;
 
     // fill up the first 16 bytes with the key
     for (0..4) |i| {
         for (0..4) |j| {
-            schedule[j] = cipher_key[i * 4 + j];
+            schedule[i * 4 + j] = cipher_key[i * 4 + j];
         }
     }
 
@@ -19,30 +19,28 @@ pub fn keyExpansion(cipher_key: [16]u8) []u8 {
     for (4..44) |i| {
         var temp = schedule[i * 4 - 4 .. i * 4];
         if (i % 4 == 0) {
-            temp = subWord(rotWord(temp));
-            temp[0] ^= consts.rcon[i / 4 - 1];
+            rotWord(temp);
+            subWord(temp);
+            temp[0] ^= consts.rcon[(i - 1) / 4];
         }
         for (0..4) |j| {
-            schedule[i + j] = schedule[(i - 4) * 4 + j] ^ temp[j];
+            schedule[i * 4 + j] = schedule[i * 4 - 16 + j] ^ temp[j];
         }
     }
 
-    return &schedule;
+    return schedule;
 }
 
-fn subWord(in: []u8) []u8 {
-    var out: [4]u8 = undefined;
+fn subWord(in: []u8) void {
     for (0..4) |i| {
-        out[i] = transformations.subByte(in[i]);
+        in[i] = transformations.subByte(in[i]);
     }
-    return &out;
 }
 
-fn rotWord(in: []u8) []u8 {
-    var out: [4]u8 = undefined;
-    out[0] = in[1];
-    out[1] = in[2];
-    out[2] = in[3];
-    out[3] = in[0];
-    return &out;
+fn rotWord(in: []u8) void {
+    const carry = in[0];
+    in[0] = in[1];
+    in[1] = in[2];
+    in[2] = in[3];
+    in[3] = carry;
 }
