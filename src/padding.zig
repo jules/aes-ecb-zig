@@ -1,5 +1,6 @@
 const std = @import("std");
 
+/// Pads a key to 16 bytes.
 pub fn padKey(key: []const u8) [16]u8 {
     var out: [16]u8 = undefined;
     for (key, 0..) |byte, i| {
@@ -13,6 +14,7 @@ pub fn padKey(key: []const u8) [16]u8 {
     return out;
 }
 
+/// Pads an input string to a multiple of 16.
 pub fn padInput(input: []const u8, allocator: std.mem.Allocator) ![]const u8 {
     const len = if (input.len < 16) 16 else input.len + input.len % 16;
 

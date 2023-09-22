@@ -8,6 +8,7 @@ const AesError = error{
     InvalidKeyLength,
 };
 
+// Encrypts a string with the AES-ECB algorithm for a given key.
 pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Allocator) ![]u8 {
     if (key.len > state_size) {
         return AesError.InvalidKeyLength;
@@ -44,6 +45,7 @@ pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Alloca
     return ciphertext;
 }
 
+// Decrypts a ciphertext with the AES-ECB algorithm for a given key.
 pub fn decrypt(ciphertext: []const u8, key: []const u8, allocator: std.mem.Allocator) ![]u8 {
     if (key.len > state_size) {
         return AesError.InvalidKeyLength;

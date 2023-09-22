@@ -37,7 +37,7 @@ pub fn keyExpansion(cipher_key: [16]u8) [176]u8 {
 
 fn subWord(in: []u8) void {
     for (0..4) |i| {
-        in[i] = transformations.subByte(in[i]);
+        in[i] = transformations.subByte(in[i], consts.s_box);
     }
 }
 

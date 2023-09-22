@@ -2,6 +2,18 @@ const std = @import("std");
 const consts = @import("consts.zig");
 const transformations = @import("transformations.zig");
 
+// Shifted polynomial constants for mixColumns.
+const muls_1 = [4]u8{ 2, 3, 1, 1 };
+const muls_2 = [4]u8{ 1, 2, 3, 1 };
+const muls_3 = [4]u8{ 1, 1, 2, 3 };
+const muls_4 = [4]u8{ 3, 1, 1, 2 };
+
+// Inverse shifted polynomial constants for invMixColumns.
+const inv_muls_1 = [4]u8{ 0xe, 0xb, 0xd, 0x9 };
+const inv_muls_2 = [4]u8{ 0x9, 0xe, 0xb, 0xd };
+const inv_muls_3 = [4]u8{ 0xd, 0x9, 0xe, 0xb };
+const inv_muls_4 = [4]u8{ 0xb, 0xd, 0x9, 0xe };
+
 /// AES state size is always 16 bytes.
 pub const state_size: usize = 16;
 
@@ -37,10 +49,12 @@ pub const State = struct {
     /// Performs the s-box for the entire cipher state.
     pub fn subBytes(self: *State) void {
         for (self.mat, 0..) |byte, i| {
-            self.mat[i] = transformations.subByte(byte);
+            self.mat[i] = transformations.subByte(byte, consts.s_box);
         }
     }
 
+    /// Shifts each of the matrix rows left by rowIndex.
+    /// E.g, first row shifts by 0, second row by 1, etc...
     pub fn shiftRows(self: *State) void {
         var offset: usize = 4;
         for (1..4) |i| {
@@ -56,30 +70,21 @@ pub const State = struct {
         }
     }
 
+    /// Interprets each matrix column as a 4-term polynomial over GF(2^8) and performs
+    /// a multiplication with 3x^3 + x^2 + x + 2 modulo x^4 + 1.
     pub fn mixColumns(self: *State) void {
-        const muls_1 = [4]u8{ 2, 3, 1, 1 };
-        const muls_2 = [4]u8{ 1, 2, 3, 1 };
-        const muls_3 = [4]u8{ 1, 1, 2, 3 };
-        const muls_4 = [4]u8{ 3, 1, 1, 2 };
-        const slice: []const u8 = &self.mat;
-        for (0..4) |i| {
-            const state_col: [4]u8 = slice[i * 4 ..][0..4].*;
-            self.mat[i * 4] = row_mul_into_xor(state_col, muls_1);
-            self.mat[i * 4 + 1] = row_mul_into_xor(state_col, muls_2);
-            self.mat[i * 4 + 2] = row_mul_into_xor(state_col, muls_3);
-            self.mat[i * 4 + 3] = row_mul_into_xor(state_col, muls_4);
-        }
+        self.polyMult(muls_1, muls_2, muls_3, muls_4);
     }
 
     /// Performs an inverted s-box for the whole cipher state.
     pub fn invSubBytes(self: *State) void {
         for (self.mat, 0..) |byte, i| {
-            const upper = byte >> 4;
-            const lower = byte & 0b00001111;
-            self.mat[i] = consts.inv_s_box[16 * upper + lower];
+            self.mat[i] = transformations.subByte(byte, consts.inv_s_box);
         }
     }
 
+    /// Shifts each of the matrix rows right by rowIndex.
+    /// E.g, first row shifts by 0, second row by 1, etc...
     pub fn invShiftRows(self: *State) void {
         var offset: usize = 4;
         for (1..4) |i| {
@@ -94,18 +99,20 @@ pub const State = struct {
         }
     }
 
+    /// Interprets each matrix column as a 4-term polynomial over GF(2^8) and performs
+    /// a multiplication with 11^3 + 13x^2 + 9x + 14 modulo x^4 + 1.
     pub fn invMixColumns(self: *State) void {
-        const muls_1 = [4]u8{ 0xe, 0xb, 0xd, 0x9 };
-        const muls_2 = [4]u8{ 0x9, 0xe, 0xb, 0xd };
-        const muls_3 = [4]u8{ 0xd, 0x9, 0xe, 0xb };
-        const muls_4 = [4]u8{ 0xb, 0xd, 0x9, 0xe };
+        self.polyMult(inv_muls_1, inv_muls_2, inv_muls_3, inv_muls_4);
+    }
+
+    fn polyMult(self: *State, m_1: [4]u8, m_2: [4]u8, m_3: [4]u8, m_4: [4]u8) void {
         const slice: []const u8 = &self.mat;
         for (0..4) |i| {
             const state_col: [4]u8 = slice[i * 4 ..][0..4].*;
-            self.mat[i * 4] = row_mul_into_xor(state_col, muls_1);
-            self.mat[i * 4 + 1] = row_mul_into_xor(state_col, muls_2);
-            self.mat[i * 4 + 2] = row_mul_into_xor(state_col, muls_3);
-            self.mat[i * 4 + 3] = row_mul_into_xor(state_col, muls_4);
+            self.mat[i * 4] = row_mul_into_xor(state_col, m_1);
+            self.mat[i * 4 + 1] = row_mul_into_xor(state_col, m_2);
+            self.mat[i * 4 + 2] = row_mul_into_xor(state_col, m_3);
+            self.mat[i * 4 + 3] = row_mul_into_xor(state_col, m_4);
         }
     }
 };
