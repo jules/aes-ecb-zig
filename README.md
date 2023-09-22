@@ -4,4 +4,4 @@
 
 ## About
 
-This is a Zig implementation of the AES-ECB cipher.
+This is a Zig implementation of the AES-ECB cipher. It was created by following the [NIST documentation](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197.pdf) on AES.
