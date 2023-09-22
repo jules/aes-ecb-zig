@@ -17,11 +17,15 @@ pub fn keyExpansion(cipher_key: [16]u8) [176]u8 {
 
     // perform key expansions for the remaining 160 bytes
     for (4..44) |i| {
-        var temp = schedule[i * 4 - 4 .. i * 4];
+        // copy previous word
+        var temp = [4]u8{ 0, 0, 0, 0 };
+        for (0..4) |j| {
+            temp[j] = schedule[i * 4 - (4 - j)];
+        }
         if (i % 4 == 0) {
-            rotWord(temp);
-            subWord(temp);
-            temp[0] ^= consts.rcon[(i - 1) / 4];
+            rotWord(&temp);
+            subWord(&temp);
+            temp[0] ^= consts.rcon[(i / 4) - 1];
         }
         for (0..4) |j| {
             schedule[i * 4 + j] = schedule[i * 4 - 16 + j] ^ temp[j];

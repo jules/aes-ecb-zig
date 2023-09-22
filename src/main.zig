@@ -16,8 +16,6 @@ pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Alloca
     const padded_key = padding.padKey(key);
     const padded_plaintext = try padding.padInput(plaintext, allocator);
     defer allocator.free(padded_plaintext);
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print("{d}\n", .{padded_plaintext});
 
     const keys = key_schedule.keyExpansion(padded_key);
 
@@ -43,7 +41,6 @@ pub fn encrypt(plaintext: []const u8, key: []const u8, allocator: std.mem.Alloca
         }
     }
 
-    try stdout.print("{d}\n", .{ciphertext});
     return ciphertext;
 }
 
@@ -55,8 +52,6 @@ pub fn decrypt(ciphertext: []const u8, key: []const u8, allocator: std.mem.Alloc
     const padded_key = padding.padKey(key);
     const padded_ciphertext = try padding.padInput(ciphertext, allocator);
     defer allocator.free(padded_ciphertext);
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print("{d}\n", .{padded_ciphertext});
 
     const keys = key_schedule.keyExpansion(padded_key);
 
@@ -84,7 +79,6 @@ pub fn decrypt(ciphertext: []const u8, key: []const u8, allocator: std.mem.Alloc
         }
     }
 
-    try stdout.print("{d}\n", .{plaintext});
     return plaintext;
 }
 

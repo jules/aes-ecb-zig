@@ -27,12 +27,14 @@ pub const State = struct {
         return self;
     }
 
+    /// Does an elementwise XOR with a given set of key bytes.
     pub fn addRoundKey(self: *State, key: []const u8) void {
         for (self.mat, key, 0..) |state, k, i| {
             self.mat[i] = state ^ k;
         }
     }
 
+    /// Performs the s-box for the entire cipher state.
     pub fn subBytes(self: *State) void {
         for (self.mat, 0..) |byte, i| {
             self.mat[i] = transformations.subByte(byte);
@@ -45,7 +47,7 @@ pub const State = struct {
             var shift: [4]u8 = undefined;
             // TODO: lol, lmao
             for (0..4) |j| {
-                shift[j] = self.mat[(i + offset * i + j * 4) % state_size];
+                shift[j] = self.mat[(i + (offset * i) + (j * 4)) % state_size];
             }
 
             for (0..4) |j| {
@@ -69,10 +71,11 @@ pub const State = struct {
         }
     }
 
+    /// Performs an inverted s-box for the whole cipher state.
     pub fn invSubBytes(self: *State) void {
         for (self.mat, 0..) |byte, i| {
             const upper = byte >> 4;
-            const lower = byte & 0xf;
+            const lower = byte & 0b00001111;
             self.mat[i] = consts.inv_s_box[16 * upper + lower];
         }
     }
@@ -82,7 +85,7 @@ pub const State = struct {
         for (1..4) |i| {
             var shift: [4]u8 = undefined;
             for (0..4) |j| {
-                shift[j] = self.mat[(i + offset * (4 - i) + j * 4) % state_size];
+                shift[j] = self.mat[(i + (offset * (4 - i)) + (j * 4)) % state_size];
             }
 
             for (0..4) |j| {
@@ -92,13 +95,13 @@ pub const State = struct {
     }
 
     pub fn invMixColumns(self: *State) void {
-        const muls_1 = @Vector(4, u8){ 0xe, 0xb, 0xd, 0x9 };
-        const muls_2 = @Vector(4, u8){ 0x9, 0xe, 0xb, 0xd };
-        const muls_3 = @Vector(4, u8){ 0xd, 0x9, 0xe, 0xb };
-        const muls_4 = @Vector(4, u8){ 0xb, 0xd, 0x9, 0xe };
+        const muls_1 = [4]u8{ 0xe, 0xb, 0xd, 0x9 };
+        const muls_2 = [4]u8{ 0x9, 0xe, 0xb, 0xd };
+        const muls_3 = [4]u8{ 0xd, 0x9, 0xe, 0xb };
+        const muls_4 = [4]u8{ 0xb, 0xd, 0x9, 0xe };
         const slice: []const u8 = &self.mat;
         for (0..4) |i| {
-            const state_col: @Vector(4, u8) = slice[i * 4 ..][0..4].*;
+            const state_col: [4]u8 = slice[i * 4 ..][0..4].*;
             self.mat[i * 4] = row_mul_into_xor(state_col, muls_1);
             self.mat[i * 4 + 1] = row_mul_into_xor(state_col, muls_2);
             self.mat[i * 4 + 2] = row_mul_into_xor(state_col, muls_3);
